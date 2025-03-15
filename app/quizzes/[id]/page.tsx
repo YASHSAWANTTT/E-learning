@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, Clock, Award, Info, AlertCircle } from "lucide-react";
 import { UserButton } from "@/components/auth/user-button";
+import { StartQuizButton } from "@/components/quiz/start-quiz-button";
 import prisma from "@/lib/prisma";
 import type { QuizAttempt } from "@prisma/client";
 
@@ -81,9 +82,7 @@ export default async function QuizDetailPage({ params }: { params: { id: string 
               )}
             </div>
             {session ? (
-              <form action={`/api/quizzes/${quizId}/attempt`} method="POST">
-                <Button type="submit">Start Quiz</Button>
-              </form>
+              <StartQuizButton quizId={quizId} />
             ) : (
               <Link href="/login">
                 <Button>Login to Take Quiz</Button>

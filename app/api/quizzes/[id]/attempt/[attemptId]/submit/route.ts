@@ -128,19 +128,22 @@ export async function POST(
           });
 
           // Set a timeout for the OpenAI API call
-          const timeoutPromise = new Promise((_, reject) => {
+          const timeoutPromise = new Promise<never>((_, reject) => {
             setTimeout(() => reject(new Error('OpenAI API timeout')), 10000);
           });
 
           // Race between the API call and timeout
-          const result = await Promise.race([gradePromise, timeoutPromise]);
+          const result = await Promise.race<ChatCompletion | Error>([gradePromise, timeoutPromise]);
           
-          // Type guard to check if result is ChatCompletion
-          if (!(result instanceof Error) && 'choices' in result && result.choices[0]?.message?.content) {
-            feedback = result.choices[0].message.content;
-          } else {
+          if (result instanceof Error) {
+            throw result;
+          }
+
+          if (!result.choices?.[0]?.message?.content) {
             throw new Error('Invalid response from OpenAI');
           }
+
+          feedback = result.choices[0].message.content;
           
           // Extract score from feedback
           const scoreMatch = feedback.match(/(\d+)\s*points?/i);

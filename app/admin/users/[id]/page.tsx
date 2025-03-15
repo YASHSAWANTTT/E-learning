@@ -9,6 +9,34 @@ import { UserButton } from "@/components/auth/user-button";
 import prisma from "@/lib/prisma";
 import { format } from "date-fns";
 
+interface Course {
+  title: string;
+}
+
+interface Enrollment {
+  id: string;
+  courseId: string;
+  enrolledAt: Date;
+  progress: number;
+  course: Course;
+}
+
+interface Quiz {
+  title: string;
+  courseId: string;
+  course?: Course;
+}
+
+interface QuizAttempt {
+  id: string;
+  quizId: string;
+  startedAt: Date;
+  completedAt: Date | null;
+  score: number | null;
+  submitted: boolean;
+  quiz: Quiz;
+}
+
 export default async function UserDetailsPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
@@ -162,7 +190,7 @@ export default async function UserDetailsPage({ params }: { params: { id: string
                       </tr>
                     </thead>
                     <tbody>
-                      {enrollments.map((enrollment) => (
+                      {enrollments.map((enrollment: Enrollment) => (
                         <tr key={enrollment.id} className="border-b hover:bg-muted/50">
                           <td className="py-2 px-4">
                             <Link href={`/admin/courses/${enrollment.courseId}`} className="text-primary hover:underline">
@@ -216,7 +244,7 @@ export default async function UserDetailsPage({ params }: { params: { id: string
                       </tr>
                     </thead>
                     <tbody>
-                      {quizAttempts.map((attempt) => (
+                      {quizAttempts.map((attempt: QuizAttempt) => (
                         <tr key={attempt.id} className="border-b hover:bg-muted/50">
                           <td className="py-2 px-4">
                             <Link href={`/admin/quizzes/${attempt.quizId}`} className="text-primary hover:underline">

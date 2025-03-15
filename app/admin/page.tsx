@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, BookOpen, CheckSquare, User, Plus } from "lucide-react";
 import { UserButton } from "@/components/auth/user-button";
+import prisma from "@/lib/prisma";
 
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -13,6 +14,11 @@ export default async function AdminDashboardPage() {
   if (!session || session.user.role !== "ADMIN") {
     redirect("/");
   }
+
+  // Fetch statistics
+  const courseCount = await prisma.course.count();
+  const quizCount = await prisma.quiz.count();
+  const userCount = await prisma.user.count();
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,7 +58,7 @@ export default async function AdminDashboardPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <span>Total Courses</span>
-                <span className="font-bold">3</span>
+                <span className="font-bold">{courseCount}</span>
               </div>
               <div className="flex space-x-2">
                 <Link href="/admin/courses">
@@ -76,7 +82,7 @@ export default async function AdminDashboardPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <span>Total Quizzes</span>
-                <span className="font-bold">4</span>
+                <span className="font-bold">{quizCount}</span>
               </div>
               <div className="flex space-x-2">
                 <Link href="/admin/quizzes">
@@ -94,15 +100,15 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* User Management */}
-        <Card className="mb-8">
+        <Card>
           <CardHeader>
             <CardTitle>User Management</CardTitle>
             <CardDescription>Manage user accounts and permissions</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center mb-4">
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
               <span>Total Users</span>
-              <span className="font-bold">1</span>
+              <span className="font-bold">{userCount}</span>
             </div>
             <Link href="/admin/users">
               <Button>Manage Users</Button>
@@ -111,17 +117,13 @@ export default async function AdminDashboardPage() {
         </Card>
 
         {/* Database Actions */}
-        <Card>
+        <Card className="mt-6">
           <CardHeader>
             <CardTitle>Database Actions</CardTitle>
             <CardDescription>Perform database operations</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex space-x-2">
-              <Link href="/api/seed">
-                <Button variant="outline">Seed Database</Button>
-              </Link>
-            </div>
+            <Button variant="outline">Seed Database</Button>
           </CardContent>
         </Card>
       </main>

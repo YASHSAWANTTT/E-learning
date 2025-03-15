@@ -1,13 +1,12 @@
-import { getServerSession } from "next-auth/next";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, Plus, Pencil, Trash2 } from "lucide-react";
 import { UserButton } from "@/components/auth/user-button";
-import prisma from "@/lib/prisma";
-import { format } from "date-fns";
 
 interface Course {
   id: string;
@@ -18,18 +17,66 @@ interface Course {
   enrollmentCount?: number;
 }
 
-export default async function AdminCoursesPage() {
-  const session = await getServerSession(authOptions);
+export default function AdminCoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  if (!session || session.user.role !== "ADMIN") {
-    redirect("/");
+  // Fetch courses on component mount
+  useState(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch('/api/courses');
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses');
+      }
+      const data = await response.json();
+      setCourses(data);
+    } catch (error) {
+      setError('Failed to load courses');
+      console.error('Error fetching courses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (courseId: string) => {
+    if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/courses/${courseId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete course');
+      }
+
+      // Remove the course from the local state
+      setCourses(courses.filter(course => course.id !== courseId));
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      alert('Failed to delete course');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Loading Courses...</h2>
+          <p className="text-muted-foreground">Please wait while we load the course list</p>
+        </div>
+      </div>
+    );
   }
-
-  const courses = await prisma.course.findMany({
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,6 +114,12 @@ export default async function AdminCoursesPage() {
           </Link>
         </div>
 
+        {error && (
+          <div className="p-4 mb-6 bg-destructive/15 text-destructive rounded-md">
+            {error}
+          </div>
+        )}
+
         {courses.length > 0 ? (
           <div className="grid gap-6">
             {courses.map((course: Course) => (
@@ -79,7 +132,7 @@ export default async function AdminCoursesPage() {
                     <div className="col-span-2">
                       <p className="text-muted-foreground mb-2">{course.description}</p>
                       <p className="text-sm text-muted-foreground">
-                        Created: {format(new Date(course.createdAt), 'PPP')}
+                        Created: {new Date(course.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex justify-end items-start space-x-2">
@@ -94,7 +147,11 @@ export default async function AdminCoursesPage() {
                           Quizzes
                         </Button>
                       </Link>
-                      <Button variant="destructive" size="sm">
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleDelete(course.id)}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                       </Button>

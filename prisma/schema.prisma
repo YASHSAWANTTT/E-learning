@@ -102,7 +102,7 @@ model Quiz {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   courseId      String
-  course        Course    @relation(fields: [courseId], references: [id])
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   questions     Question[]
   attempts      QuizAttempt[]
 }
@@ -115,7 +115,7 @@ model Question {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   quizId        String
-  quiz          Quiz      @relation(fields: [quizId], references: [id])
+  quiz          Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
   options       QuestionOption[]
   answers       Answer[]
 }
@@ -134,7 +134,7 @@ model QuestionOption {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   questionId    String
-  question      Question  @relation(fields: [questionId], references: [id])
+  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model QuizAttempt {
@@ -146,9 +146,9 @@ model QuizAttempt {
   syncedToCanvas Boolean  @default(false)
   void          Boolean   @default(false)  // Indicates if the attempt was voided
   userId        String
-  user          User      @relation(fields: [userId], references: [id])
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   quizId        String
-  quiz          Quiz      @relation(fields: [quizId], references: [id])
+  quiz          Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
   answers       Answer[]
 }
 
@@ -160,7 +160,7 @@ model Answer {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   questionId    String
-  question      Question  @relation(fields: [questionId], references: [id])
+  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
   attemptId     String
-  attempt       QuizAttempt @relation(fields: [attemptId], references: [id])
+  attempt       QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import OpenAI from 'openai';
+import { ChatCompletion } from 'openai/resources';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -132,13 +133,14 @@ export async function POST(
           });
 
           // Race between the API call and timeout
-          const completion = await Promise.race([gradePromise, timeoutPromise]);
+          const result = await Promise.race([gradePromise, timeoutPromise]);
           
-          if (completion instanceof Error) {
-            throw completion;
+          // Type guard to check if result is ChatCompletion
+          if (!(result instanceof Error) && 'choices' in result && result.choices[0]?.message?.content) {
+            feedback = result.choices[0].message.content;
+          } else {
+            throw new Error('Invalid response from OpenAI');
           }
-
-          feedback = completion.choices[0].message.content || '';
           
           // Extract score from feedback
           const scoreMatch = feedback.match(/(\d+)\s*points?/i);

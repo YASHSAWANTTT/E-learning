@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ export default function AdminUsersPage() {
   const router = useRouter();
 
   // Fetch users on component mount
-  useState(() => {
+  useEffect(() => {
     fetchUsers();
   }, []);
 

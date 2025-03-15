@@ -11,6 +11,7 @@ export async function POST(
     const session = await getServerSession(authOptions);
     
     if (!session) {
+      console.log("No session found");
       return NextResponse.json(
         { error: "You must be logged in to take a quiz" },
         { status: 401 }
@@ -19,6 +20,14 @@ export async function POST(
 
     const quizId = params.id;
     const userId = session.user.id;
+
+    if (!userId) {
+      console.log("No user ID found in session");
+      return NextResponse.json(
+        { error: "Invalid session" },
+        { status: 401 }
+      );
+    }
 
     console.log(`Creating quiz attempt for user ${userId} on quiz ${quizId}`);
 
@@ -35,11 +44,30 @@ export async function POST(
       );
     }
 
+    // Check if user has an active attempt
+    const existingAttempt = await prisma.quizAttempt.findFirst({
+      where: {
+        userId,
+        quizId,
+        submitted: false
+      }
+    });
+
+    if (existingAttempt) {
+      console.log(`Active attempt found: ${existingAttempt.id}`);
+      return NextResponse.json(
+        { message: "Quiz attempt already exists", attemptId: existingAttempt.id },
+        { status: 200 }
+      );
+    }
+
     // Create a new quiz attempt
     const attempt = await prisma.quizAttempt.create({
       data: {
         userId,
-        quizId
+        quizId,
+        startedAt: new Date(),
+        submitted: false
       }
     });
 
@@ -51,8 +79,12 @@ export async function POST(
     );
   } catch (error) {
     console.error("Quiz attempt error:", error);
+    // More detailed error response
     return NextResponse.json(
-      { error: "Something went wrong", details: error },
+      { 
+        error: "Failed to create quiz attempt",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }

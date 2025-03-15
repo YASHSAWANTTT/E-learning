@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,8 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -58,20 +60,15 @@ export function LoginForm() {
         return;
       }
 
-      // First refresh to ensure session is updated
-      router.refresh();
-
       // Set success message
-      setSuccess("You have been logged in");
+      setSuccess("Login successful! Redirecting...");
+
+      // Refresh to ensure session is updated
+      router.refresh();
 
       // Small delay to ensure the session is properly updated
       setTimeout(() => {
-        // Check if user is admin and redirect accordingly
-        if (values.email === "admin@example.com") {
-          router.push("/admin");
-        } else {
-          router.push("/dashboard");
-        }
+        router.push(callbackUrl);
       }, 500);
     } catch (error) {
       console.error("Login error:", error);
@@ -134,16 +131,14 @@ export function LoginForm() {
           </Button>
         </form>
       </Form>
+      
       <div className="text-center text-sm">
         <p className="text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          Don't have an account?{" "}
           <Link href="/register" className="text-primary hover:underline">
             Sign up
           </Link>
         </p>
-      </div>
-      <div className="text-center text-xs text-muted-foreground">
-        <p>Admin login: admin@example.com / admin123</p>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,6 @@ export default function AdminCoursesPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Fetch courses on component mount
-  useState(() => {
-    fetchCourses();
-  }, []);
-
   const fetchCourses = async () => {
     try {
       const response = await fetch('/api/courses');
@@ -43,6 +38,11 @@ export default function AdminCoursesPage() {
       setIsLoading(false);
     }
   };
+
+  // Fetch courses on component mount
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
   const handleDelete = async (courseId: string) => {
     if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) {

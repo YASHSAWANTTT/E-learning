@@ -144,6 +144,7 @@ model QuizAttempt {
   score         Int?      // Score as percentage
   submitted     Boolean   @default(false)
   syncedToCanvas Boolean  @default(false)
+  void          Boolean   @default(false)  // Indicates if the attempt was voided
   userId        String
   user          User      @relation(fields: [userId], references: [id])
   quizId        String

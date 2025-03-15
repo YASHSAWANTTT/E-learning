@@ -44,22 +44,20 @@ export async function POST(
       );
     }
 
-    // Check if user has an active attempt
-    const existingAttempt = await prisma.quizAttempt.findFirst({
+    // Mark any existing unsubmitted attempts as void
+    await prisma.quizAttempt.updateMany({
       where: {
         userId,
         quizId,
         submitted: false
+      },
+      data: {
+        submitted: true,
+        score: 0,
+        completedAt: new Date(),
+        void: true
       }
     });
-
-    if (existingAttempt) {
-      console.log(`Active attempt found: ${existingAttempt.id}`);
-      return NextResponse.json(
-        { message: "Quiz attempt already exists", attemptId: existingAttempt.id },
-        { status: 200 }
-      );
-    }
 
     // Create a new quiz attempt
     const attempt = await prisma.quizAttempt.create({
@@ -67,7 +65,8 @@ export async function POST(
         userId,
         quizId,
         startedAt: new Date(),
-        submitted: false
+        submitted: false,
+        void: false
       }
     });
 

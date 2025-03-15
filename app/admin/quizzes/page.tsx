@@ -14,6 +14,7 @@ interface Quiz {
   description: string | null;
   timeLimit: number | null;
   passingScore: number | null;
+  canvasQuizId: string | null;
   courseId: string;
   createdAt: Date;
   updatedAt: Date;

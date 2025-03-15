@@ -11,9 +11,10 @@ import prisma from "@/lib/prisma";
 interface Quiz {
   id: string;
   title: string;
-  description?: string;
-  timeLimit: number;
-  passingScore: number;
+  description: string | null;
+  timeLimit: number | null;
+  passingScore: number | null;
+  canvasQuizId: string | null;
   courseId: string;
   createdAt: Date;
   updatedAt: Date;

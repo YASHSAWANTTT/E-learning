@@ -8,6 +8,21 @@ import { GraduationCap, Plus, FileText, CheckCircle, XCircle } from "lucide-reac
 import { UserButton } from "@/components/auth/user-button";
 import prisma from "@/lib/prisma";
 
+interface Question {
+  id: string;
+  text: string;
+  type: string;
+  points: number;
+  quizId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  options: {
+    id: string;
+    text: string;
+    isCorrect: boolean;
+  }[];
+}
+
 export default async function QuizQuestionsPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
@@ -77,7 +92,7 @@ export default async function QuizQuestionsPage({ params }: { params: { id: stri
 
         {questions.length > 0 ? (
           <div className="space-y-6">
-            {questions.map((question, index) => (
+            {questions.map((question: Question, index) => (
               <Card key={question.id}>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center">

@@ -9,6 +9,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Set response timeout to 60 seconds
+export const maxDuration = 60;
+
+// Configure runtime
+export const runtime = 'nodejs';
+
 export async function POST(
   req: Request,
   { params }: { params: { id: string; attemptId: string } }
@@ -97,40 +103,56 @@ export async function POST(
           feedback = `Incorrect. The correct answer was: ${correctOption?.text}`;
         }
       } else if (question.type === 'SHORT_ANSWER' || question.type === 'ESSAY') {
-        // Use AI to grade text responses
-        const correctAnswer = question.options.find(o => o.isCorrect)?.text || '';
-        
-        const completion = await openai.chat.completions.create({
-          messages: [
-            {
-              role: 'system',
-              content: `You are an AI tutor grading student responses. 
-                Evaluate the answer based on the following rubric:
-                - **2 points**: Answer is fully correct and well-explained.
-                - **1 point**: Answer has relevant elements but is incomplete or somewhat incorrect.
-                - **0 points**: Answer is incorrect or lacks relevance.
-                
-                Consider the question, the student's response, and key points for an ideal answer when grading.`
-            },
-            {
-              role: 'user',
-              content: `Question: ${question.text}\nStudent's Response: ${answer.text || 'No answer provided'}\nExpected Key Points: ${correctAnswer}`
-            }
-          ],
-          model: 'gpt-4',
-          temperature: 0.3,
-          max_tokens: 500,
-        });
+        try {
+          // Use AI to grade text responses with a timeout
+          const gradePromise = openai.chat.completions.create({
+            messages: [
+              {
+                role: 'system',
+                content: `You are an AI tutor grading student responses. Grade the answer on a scale of 0-2 points.
+                  2 points: Answer is fully correct and well-explained.
+                  1 point: Answer has relevant elements but is incomplete or somewhat incorrect.
+                  0 points: Answer is incorrect or lacks relevance.
+                  
+                  Provide brief feedback and clearly state the score at the end in the format: "Score: X points"`
+              },
+              {
+                role: 'user',
+                content: `Question: ${question.text}\nStudent's Response: ${answer.text || 'No answer provided'}\nExpected Key Points: ${question.options.find(o => o.isCorrect)?.text || ''}`
+              }
+            ],
+            model: 'gpt-3.5-turbo',
+            temperature: 0.3,
+            max_tokens: 150,
+          });
 
-        feedback = completion.choices[0].message.content || '';
-        
-        // Extract score from feedback (assuming it's in the format "Score: X points")
-        const scoreMatch = feedback.match(/(\d+)\s*points?/i);
-        const aiScore = scoreMatch ? parseInt(scoreMatch[1]) : 0;
-        
-        // Calculate earned points based on AI score
-        const pointsPerAIScore = question.points / 2; // 2 is max AI score
-        earnedPointsForQuestion = aiScore * pointsPerAIScore;
+          // Set a timeout for the OpenAI API call
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('OpenAI API timeout')), 10000);
+          });
+
+          // Race between the API call and timeout
+          const completion = await Promise.race([gradePromise, timeoutPromise]);
+          
+          if (completion instanceof Error) {
+            throw completion;
+          }
+
+          feedback = completion.choices[0].message.content || '';
+          
+          // Extract score from feedback
+          const scoreMatch = feedback.match(/(\d+)\s*points?/i);
+          const aiScore = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+          
+          // Calculate earned points based on AI score
+          const pointsPerAIScore = question.points / 2; // 2 is max AI score
+          earnedPointsForQuestion = aiScore * pointsPerAIScore;
+        } catch (error) {
+          console.error('Error grading with AI:', error);
+          // Fallback scoring for AI grading failures
+          earnedPointsForQuestion = question.points / 2; // Award half points if AI grading fails
+          feedback = 'Grading system error. Partial credit awarded.';
+        }
       }
 
       earnedPoints += earnedPointsForQuestion;
@@ -175,7 +197,7 @@ export async function POST(
   } catch (error) {
     console.error("Quiz submission error:", error);
     return NextResponse.json(
-      { error: "Something went wrong", details: error },
+      { error: "Something went wrong", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

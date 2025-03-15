@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "app/api/quizzes/[id]/attempt/[attemptId]/submit/route.ts": {
+      "maxDuration": 60
+    }
+  },
+  "crons": []
+} 

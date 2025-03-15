@@ -58,16 +58,21 @@ export function LoginForm() {
         return;
       }
 
+      // First refresh to ensure session is updated
+      router.refresh();
+
+      // Set success message
       setSuccess("You have been logged in");
 
-      // Check if user is admin and redirect accordingly
-      if (values.email === "admin@example.com") {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
-      }
-      
-      router.refresh();
+      // Small delay to ensure the session is properly updated
+      setTimeout(() => {
+        // Check if user is admin and redirect accordingly
+        if (values.email === "admin@example.com") {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
+      }, 500);
     } catch (error) {
       console.error("Login error:", error);
       setError("Something went wrong");

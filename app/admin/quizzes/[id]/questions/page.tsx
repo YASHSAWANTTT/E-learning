@@ -92,7 +92,7 @@ export default async function QuizQuestionsPage({ params }: { params: { id: stri
 
         {questions.length > 0 ? (
           <div className="space-y-6">
-            {questions.map((question: Question, index) => (
+            {questions.map((question: Question, index: number) => (
               <Card key={question.id}>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center">

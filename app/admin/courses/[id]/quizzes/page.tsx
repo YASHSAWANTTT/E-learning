@@ -8,6 +8,17 @@ import { GraduationCap, Plus, Clock, Award } from "lucide-react";
 import { UserButton } from "@/components/auth/user-button";
 import prisma from "@/lib/prisma";
 
+interface Quiz {
+  id: string;
+  title: string;
+  description?: string;
+  timeLimit: number;
+  passingScore: number;
+  courseId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export default async function CourseQuizzesPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
@@ -74,7 +85,7 @@ export default async function CourseQuizzesPage({ params }: { params: { id: stri
 
         {quizzes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quizzes.map((quiz) => (
+            {quizzes.map((quiz: Quiz) => (
               <Card key={quiz.id} className="flex flex-col h-full">
                 <CardHeader>
                   <CardTitle>{quiz.title}</CardTitle>

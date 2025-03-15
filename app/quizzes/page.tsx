@@ -8,8 +8,19 @@ import { Badge } from '@/components/ui/badge';
 import { GraduationCap, Clock, Award, Loader2 } from 'lucide-react';
 import { UserButton } from '@/components/auth/user-button';
 
+interface Quiz {
+  id: string;
+  title: string;
+  description: string | null;
+  timeLimit: number | null;
+  passingScore: number | null;
+  courseId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export default function QuizzesPage() {
-  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +118,7 @@ export default function QuizzesPage() {
 
         {quizzes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quizzes.map((quiz) => {
+            {quizzes.map((quiz: Quiz) => {
               const difficulty = getDifficulty(quiz.passingScore || 70);
               return (
                 <Card key={quiz.id} className="flex flex-col h-full">

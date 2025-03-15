@@ -9,6 +9,15 @@ import { UserButton } from "@/components/auth/user-button";
 import prisma from "@/lib/prisma";
 import { format } from "date-fns";
 
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  enrollmentCount?: number;
+}
+
 export default async function AdminCoursesPage() {
   const session = await getServerSession(authOptions);
 
@@ -60,7 +69,7 @@ export default async function AdminCoursesPage() {
 
         {courses.length > 0 ? (
           <div className="grid gap-6">
-            {courses.map((course) => (
+            {courses.map((course: Course) => (
               <Card key={course.id}>
                 <CardHeader className="pb-3">
                   <CardTitle>{course.title}</CardTitle>

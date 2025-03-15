@@ -89,19 +89,12 @@ export async function GET() {
     // Check if user is authenticated and is an admin
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Unauthorized. Only admins can view all users." },
+        { error: "Unauthorized. Only admins can view users." },
         { status: 403 }
       );
     }
 
     const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
       orderBy: {
         createdAt: 'desc',
       },

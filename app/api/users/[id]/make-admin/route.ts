@@ -202,4 +202,52 @@ export async function DELETE(
   }
 }
 
+export async function POST(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    // Check if user is authenticated and is an admin
+    if (!session || session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Unauthorized. Only admins can perform this action." },
+        { status: 403 }
+      );
+    }
+
+    const userId = params.id;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    // Update user role to ADMIN
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { role: "ADMIN" }
+    });
+
+    return NextResponse.json({
+      message: "User role updated successfully",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
+}
+
 export const dynamic = 'force-dynamic';

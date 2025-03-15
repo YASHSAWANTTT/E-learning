@@ -1,26 +1,85 @@
-import { getServerSession } from "next-auth/next";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, UserPlus, Shield, User as UserIcon, Eye } from "lucide-react";
 import { UserButton } from "@/components/auth/user-button";
-import prisma from "@/lib/prisma";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
-export default async function AdminUsersPage() {
-  const session = await getServerSession(authOptions);
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  role: "USER" | "ADMIN";
+  createdAt: Date;
+}
 
-  if (!session || session.user.role !== "ADMIN") {
-    redirect("/");
+export default function AdminUsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Fetch users on component mount
+  useState(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const data = await response.json();
+      setUsers(data);
+    } catch (error) {
+      setError('Failed to load users');
+      console.error('Error fetching users:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMakeAdmin = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/make-admin`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user role');
+      }
+
+      // Update the user's role in the local state
+      setUsers(users.map(user => 
+        user.id === userId 
+          ? { ...user, role: "ADMIN" as const }
+          : user
+      ));
+
+      toast.success('User role updated successfully');
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast.error('Failed to update user role');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Loading Users...</h2>
+          <p className="text-muted-foreground">Please wait while we load the user list</p>
+        </div>
+      </div>
+    );
   }
-
-  const users = await prisma.user.findMany({
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,6 +117,12 @@ export default async function AdminUsersPage() {
           </Link>
         </div>
 
+        {error && (
+          <div className="p-4 mb-6 bg-destructive/15 text-destructive rounded-md">
+            {error}
+          </div>
+        )}
+
         {users.length > 0 ? (
           <div className="grid gap-6">
             {users.map((user) => (
@@ -93,12 +158,14 @@ export default async function AdminUsersPage() {
                         </Button>
                       </Link>
                       {user.role !== "ADMIN" && (
-                        <form action={`/api/users/${user.id}/make-admin`} method="POST">
-                          <Button variant="outline" size="sm" type="submit">
-                            <Shield className="h-4 w-4 mr-2" />
-                            Make Admin
-                          </Button>
-                        </form>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleMakeAdmin(user.id)}
+                        >
+                          <Shield className="h-4 w-4 mr-2" />
+                          Make Admin
+                        </Button>
                       )}
                     </div>
                   </div>
